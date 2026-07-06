@@ -633,13 +633,13 @@ export default function App() {
   return (
     <div style={{
       fontFamily: BODY_FONT, background: C.bg, color: C.text,
-      maxWidth: 430, margin: "0 auto", height: "100vh", display: "flex",
+      width: "100%", height: "100dvh", margin: 0, display: "flex",
       flexDirection: "column", position: "relative", overflow: "hidden",
-      border: `1px solid ${C.border}`,
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body, #root { height: 100%; margin: 0; background: ${C.bg}; }
         input, button { font-family: ${BODY_FONT}; }
         input:focus, button:focus { outline: 2px solid ${C.accent}; outline-offset: 1px; }
         ::-webkit-scrollbar { width: 0; height: 0; }
@@ -665,7 +665,7 @@ export default function App() {
         <AddExerciseOverlay onPick={addExerciseToSession} onClose={() => setShowAddExercise(false)} />
       )}
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 12px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "calc(env(safe-area-inset-top, 0px) + 16px) 16px 12px" }}>
         {tab === "home" && (
           <HomeScreen
             streak={streak} weekStats={weekStats} history={history}
@@ -737,7 +737,7 @@ function BottomNav({ tab, setTab, hasSession }) {
   return (
     <div style={{
       display: "flex", borderTop: `1px solid ${C.border}`, background: C.surface,
-      padding: "8px 4px 12px",
+      padding: "8px 4px calc(env(safe-area-inset-bottom, 0px) + 10px)",
     }}>
       {items.map((it) => {
         const Icon = it.icon;
@@ -986,14 +986,28 @@ function ActiveWorkout({ session, onToggleSet, onUpdateSet, onAddSet, onRemoveSe
             {ex.sets.map((s, setIdx) => (
               <div key={setIdx} style={{ display: "flex", alignItems: "center", marginTop: 6, gap: 6 }}>
                 <div style={{ width: 26, color: C.muted, fontSize: 13, fontWeight: 700 }}>{setIdx + 1}</div>
-                <input type="number" inputMode="decimal" value={s.weight}
-                  onChange={(e) => onUpdateSet(exIdx, setIdx, "weight", parseFloat(e.target.value) || 0)}
+                <input type="text" inputMode="decimal" value={s.weight === 0 ? "" : s.weight}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(",", ".");
+                    if (raw === "") { onUpdateSet(exIdx, setIdx, "weight", 0); return; }
+                    if (!/^\d*\.?\d*$/.test(raw)) return;
+                    onUpdateSet(exIdx, setIdx, "weight", raw.endsWith(".") ? raw : parseFloat(raw) || 0);
+                  }}
+                  placeholder="0"
                   style={{
                     flex: 1, background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 8,
                     color: C.text, padding: "8px 6px", fontSize: 14, fontWeight: 700, width: 0,
                   }} />
-                <input type="number" inputMode="numeric" value={s.reps}
-                  onChange={(e) => onUpdateSet(exIdx, setIdx, "reps", parseInt(e.target.value) || 0)}
+                <input type="text" inputMode="numeric" value={s.reps === 0 ? "" : s.reps}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === "") { onUpdateSet(exIdx, setIdx, "reps", 0); return; }
+                    if (!/^\d*$/.test(raw)) return;
+                    onUpdateSet(exIdx, setIdx, "reps", parseInt(raw) || 0);
+                  }}
+                  placeholder="0"
                   style={{
                     flex: 1, background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 8,
                     color: C.text, padding: "8px 6px", fontSize: 14, fontWeight: 700, width: 0,
